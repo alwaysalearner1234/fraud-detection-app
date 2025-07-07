@@ -33,16 +33,28 @@ model = train_model()
 
 uploaded_file = st.file_uploader("Upload a CSV file with transaction data", type=["csv"])
 
+expected_columns = ['V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','Amount']
+
 if uploaded_file:
-    data = pd.read_csv(uploaded_file)
-    st.subheader("📊 Uploaded Data")
-    st.dataframe(data)
+    try:
+        data = pd.read_csv(uploaded_file)
 
-    if st.button("Predict Fraud"):
-        preds = model.predict(data)
-        data['Prediction'] = ['Fraud' if p == 1 else 'Legit' for p in preds]
+        # Check if all required columns are present
+        if not all(col in data.columns for col in expected_columns):
+            st.error(f"❌ Uploaded CSV must have these columns: {expected_columns}")
+        else:
+            data = data[expected_columns]  # ensure correct order
+            st.subheader("📊 Uploaded Data")
+            st.dataframe(data)
 
-        st.subheader("🔍 Results")
-        st.dataframe(data[['Prediction']])
+            if st.button("Predict Fraud"):
+                preds = model.predict(data)
+                data['Prediction'] = ['Fraud' if p == 1 else 'Legit' for p in preds]
 
-        st.success(f"✅ Detected {sum(preds)} fraudulent transactions out of {len(preds)}.")
+                st.subheader("🔍 Results")
+                st.dataframe(data[['Prediction']])
+                st.success(f"✅ Detected {sum(preds)} fraudulent transactions out of {len(preds)}.")
+
+    except Exception as e:
+        st.error(f"⚠️ Failed to read CSV: {e}")
+
